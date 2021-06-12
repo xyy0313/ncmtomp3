@@ -1,7 +1,7 @@
-console.time('1');
 const fs = require('fs');
 const aes = require('aes-js');
 
+console.time('1');
 fs.readdir('./mp3', function (err, files) {
     // console.log(files);
     files.forEach(v => {
@@ -65,7 +65,7 @@ fs.readdir('./mp3', function (err, files) {
         file.copy(imageBuffer, 0, globalOffset, globalOffset + imageLength);
         globalOffset += imageLength;
         // write image to file
-        fs.writeFileSync('1.jpg', imageBuffer);
+        fs.writeFileSync('./my-mp3/' + v.replace(/.ncm/, '') + '.jpg', imageBuffer);
 
         function buildKeyBox (key) {
             const keyLength = key.length;
