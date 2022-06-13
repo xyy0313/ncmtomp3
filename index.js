@@ -27,7 +27,20 @@ fs.readdir('./mp3', function (err, files) {
 
         const aesEcb = new aes.ModeOfOperation.ecb(coreKey);
 
-        const decodedKeyData = aes.padding.pkcs7.strip(aesEcb.decrypt(keyData));
+        let decodedKeyData;
+
+        try {
+			console.log("Decrypting file:", v);
+			decodedKeyData = aes.padding.pkcs7.strip(
+				aesEcb.decrypt(keyData)
+			);
+		} catch (error) {
+			console.error(error);
+			console.log("Failed to encrypt file:", v);
+            return;
+			// expected output: ReferenceError: nonExistentFunction is not defined
+			// Note - error messages will vary depending on browser
+		}
 
         const trimKeyData = decodedKeyData.slice(17);
         // console.log(1, Buffer.from(decodedKeyData).toString('ascii'));
