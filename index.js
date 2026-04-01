@@ -1,18 +1,16 @@
 const fs = require('fs');
 const aes = require('aes-js');
+const sourcePath = './ncm';
+const targetPath = './mp3';
 
 console.time('1');
-fs.readdir('./mp3', function (err, files) {
-    // console.log(files);
+fs.readdir(sourcePath, function (_, files) {
     files.forEach(v => {
-        // console.log(v);
-        const file = fs.readFileSync('./mp3/' + v);
-        // console.log('file', file);
+        const file = fs.readFileSync(sourcePath + '/' + v);
         let globalOffset = 10;
 
         const keyLength = file.readUInt32LE(10);
         globalOffset += 4;
-        // console.log('key length: ', keyLength);
 
         const keyData = Buffer.alloc(keyLength);
 
@@ -30,24 +28,18 @@ fs.readdir('./mp3', function (err, files) {
         let decodedKeyData;
 
         try {
-			console.log("Decrypting file:", v);
 			decodedKeyData = aes.padding.pkcs7.strip(
 				aesEcb.decrypt(keyData)
 			);
 		} catch (error) {
 			console.error(error);
-			console.log("Failed to encrypt file:", v);
             return;
-			// expected output: ReferenceError: nonExistentFunction is not defined
-			// Note - error messages will vary depending on browser
 		}
 
         const trimKeyData = decodedKeyData.slice(17);
-        // console.log(1, Buffer.from(decodedKeyData).toString('ascii'));
 
         const metaLength = file.readUInt32LE(globalOffset);
         globalOffset += 4;
-        // console.log('meta length: ', metaLength);
         const metaData = Buffer.alloc(metaLength);
         file.copy(metaData, 0, globalOffset, globalOffset + metaLength);
         globalOffset += metaLength;
@@ -55,30 +47,15 @@ fs.readdir('./mp3', function (err, files) {
             metaData[i] ^= 0x63;
         }
 
-        const base64decode = Buffer.from(Buffer.from(metaData.slice(22)).toString('ascii'), 'base64');
-
-        const metaKey = new Uint8Array([0x23, 0x31, 0x34, 0x6C, 0x6A, 0x6B, 0x5F, 0x21, 0x5C, 0x5D, 0x26, 0x30, 0x55, 0x3C, 0x27, 0x28]);
-        const aseMeta = new aes.ModeOfOperation.ecb(metaKey);
-        const meatArray = aes.padding.pkcs7.strip(aseMeta.decrypt(base64decode));
-
-        const metaJson = Buffer.from(meatArray).toString('utf8');
-        // console.log(metaJson);
-        const metaObject = JSON.parse(metaJson.substr(6));
-        // console.log(metaObject);
-
-        // read crc32 check
         file.readUInt32LE(globalOffset);
         globalOffset += 4;
         globalOffset += 5;
-        // read image length
         const imageLength = file.readUInt32LE(globalOffset);
         globalOffset += 4;
-        // console.log('image length: %d', imageLength);
         const imageBuffer = Buffer.alloc(imageLength);
         file.copy(imageBuffer, 0, globalOffset, globalOffset + imageLength);
         globalOffset += imageLength;
-        // write image to file
-        fs.writeFileSync('./my-mp3/' + v.replace(/.ncm/, '') + '.jpg', imageBuffer);
+        fs.writeFileSync(targetPath + '/' + v.replace(/.ncm/, '') + '.jpg', imageBuffer);
 
         function buildKeyBox (key) {
             const keyLength = key.length;
@@ -123,6 +100,6 @@ fs.readdir('./mp3', function (err, files) {
 
             fmusic.push(buffer);
         }
-        fs.writeFileSync('./my-mp3/' + v.replace(/.ncm/, '.mp3'), Buffer.concat(fmusic));
+        fs.writeFileSync(targetPath + '/' + v.replace(/.ncm/, '.mp3'), Buffer.concat(fmusic));
     })
 })
